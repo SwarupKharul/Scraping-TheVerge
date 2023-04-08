@@ -1,6 +1,9 @@
+import pandas as pd
 import requests
 import json
 from bs4 import BeautifulSoup
+import sqlite3
+import uuid
 
 url = "https://www.theverge.com"
 response = requests.get(url)
@@ -23,12 +26,27 @@ stringified = json.dumps(json_data)
 data = json_data["props"]["pageProps"]["hydration"]["responses"][0]["data"]
 placements = data["community"]["frontPage"]["placements"]
 
+
+# # Connect to the SQLite database and create a new table
+# conn = sqlite3.connect("verge_articles.db")
+# c = conn.cursor()
+# c.execute(
+#     """CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, author TEXT, date DATETIME, url TEXT)"""
+# )
+
+response = []
 for placement in placements:
     details = placement["placeable"]
     if details == None:
         continue
-    url = details["url"]
+    durl = details["url"]
     title = details["title"]
     author = details["author"]["fullName"]
     date = details["publishDate"]
-    print(f"{title} by {author} on {date} - {url}]\n")
+    id = uuid.uuid4()
+    # Format the date 2023-04-05T12:30:00.000Z to pandas datetime format
+    date = pd.to_datetime(date.replace(".000Z", ""))
+    response.append([str(id), title, author, date, durl])
+
+
+print(response)
