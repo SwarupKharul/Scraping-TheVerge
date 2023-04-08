@@ -1,4 +1,5 @@
 import datetime
+import json
 from django.db import IntegrityError
 from django.http import HttpResponse, JsonResponse
 import requests
@@ -19,7 +20,11 @@ def updatedb(request):
         response = requests.get(seedurl)
         content = response.content
 
-        # Upload the data to db
+        # Convert the data to dictionary
+        content = json.loads(content)
+
+        # print(content)
+
         for article in content:
             try:
                 Article.objects.create(
@@ -29,6 +34,7 @@ def updatedb(request):
                     author=article["author"],
                     date=article["date"],
                 )
+                print("Article created successfully.")
             # If the article already exists, update it
             except IntegrityError:
                 Article.objects.filter(id=article["id"]).update(
@@ -59,3 +65,26 @@ def csv(request):
         response["Content-Disposition"] = f"attachment; filename={name}"
 
         return response
+
+
+def showdb(request):
+    if request.method == "GET":
+        # Fetch data from database
+        articles = Article.objects.all()
+
+        # Return articles in JSON format
+        response = []
+        for article in articles:
+            response.append(
+                {
+                    "id": article.id,
+                    "title": article.title,
+                    "url": article.url,
+                    "author": article.author,
+                    "date": article.date,
+                    "created_at": article.created_at,
+                    "updated_at": article.updated_at,
+                }
+            )
+
+        return JsonResponse({"articles": response})
